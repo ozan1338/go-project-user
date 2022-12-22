@@ -2,8 +2,12 @@ package userhandler
 
 import (
 	"net/http"
+	"project/domain/user"
 	"project/helpers"
 	"project/service"
+	"time"
+
+	"project/pkg/jwt"
 
 	"github.com/gorilla/mux"
 )
@@ -11,12 +15,14 @@ import (
 type userHandler struct {
 	userService service.UserServiceInterface
 	helpers helpers.HelpersInterface
+	JWT jwt.Maker
 }
 
-func NewUserHandler(userService service.UserServiceInterface, helpers helpers.HelpersInterface) *userHandler {
+func NewUserHandler(userService service.UserServiceInterface, helpers helpers.HelpersInterface,JWT jwt.Maker) *userHandler {
 	return &userHandler{
 		userService: userService,
 		helpers: helpers,
+		JWT: JWT,
 	}
 }
 
@@ -42,4 +48,32 @@ func (h userHandler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.helpers.WriteResponse(w, http.StatusOK, user)
+}
+
+func (h userHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	var user user.UsersRequest
+	if err := h.helpers.ReadJSON(w,r,&user); err != nil {
+		h.helpers.WriteResponse(w,err.GetStatus(),err)
+		return
+	}
+	
+	result, err := h.userService.CreateUser(user)
+	if err != nil {
+		h.helpers.WriteResponse(w,err.GetStatus(),err)
+		return
+	}
+
+	var accesTokenDuration time.Duration = 15 * time.Minute
+
+	jwtToken, _, err :=h.JWT.CreateToken(result.ID,accesTokenDuration)
+
+	if err != nil {
+		h.helpers.WriteResponse(w,err.GetStatus(),err)
+		return
+	}
+
+	result.JWT = jwtToken
+
+	h.helpers.WriteResponse(w,http.StatusOK, result)
+
 }

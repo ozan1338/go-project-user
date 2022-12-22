@@ -17,6 +17,7 @@ var Conn *sql.DB
 //var dsn string = "host=localhost port=5432 user=postgres password=nikon1337 dbname=users sslmode=disable timezone=UTC connect_timeout=5"
 var dsn string = os.Getenv("DSN")
 var count int64
+//queryAlterTable = ALTER TABLE public."user" ALTER COLUMN "password" TYPE varchar(250) USING "password"::varchar;
 
 
 func DatabaseInit() *sql.DB {
@@ -33,7 +34,7 @@ func DatabaseInit() *sql.DB {
 				id serial primary key,
 				name varchar(50) not null,
 				email varchar(250) unique not null,
-				password varchar(50) not null
+				password varchar(250) not null
 			 );`
 			stmt, err := Conn.Prepare(queryCreateTable)
 			if err != nil {

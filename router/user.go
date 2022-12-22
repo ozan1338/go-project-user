@@ -6,6 +6,7 @@ import (
 	"project/handlers/pinghandler"
 	"project/handlers/userhandler"
 	"project/helpers"
+	"project/pkg/jwt"
 	"project/pkg/postgresql"
 	"project/repo"
 	"project/service"
@@ -25,12 +26,16 @@ func userRouter(r *mux.Router) {
 	//4. add service
 	userService := service.NewUserService(repo)
 
-	//3.add handlers for user
+	//5. add jwt
+	jwtMaker := jwt.NewJWTMaker("secret")
+
+	//6.add handlers for user
 	h := pinghandler.PingHandler(helper)
-	u := userhandler.NewUserHandler(userService, helper)
+	u := userhandler.NewUserHandler(userService, helper, jwtMaker)
 
 	//serve the route
 	r.HandleFunc("/", h.Ping).Methods(http.MethodGet)
 	r.HandleFunc("/get-all", u.GetAllUser).Methods(http.MethodGet)
 	r.HandleFunc("/get-user/{user_id:[0-9]+}",u.GetUserByID).Methods(http.MethodGet)
+	r.HandleFunc("/create-user", u.CreateUser).Methods(http.MethodPost)
 }

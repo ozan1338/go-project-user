@@ -13,7 +13,7 @@ type RespError interface {
 	GetError() string
 }
 
-type respError struct {
+type RespErrorStruct struct {
 	Message string `json:"message"`
 	Status  int    `json:"status"`
 	Err     string `json:"error"`
@@ -23,20 +23,20 @@ func NewError(msg string) error {
 	return errors.New(msg)
 }
 
-func (e respError) GetError() string {
+func (e RespErrorStruct) GetError() string {
 	return fmt.Sprintf(e.Err)
 }
 
-func (e respError) GetStatus() int {
+func (e RespErrorStruct) GetStatus() int {
 	return e.Status
 }
 
-func (e respError) GetMessage() string {
+func (e RespErrorStruct) GetMessage() string {
 	return fmt.Sprintf(e.Message)
 }
 
 func NewRespError(message string, status int, err string) RespError{
-	return respError{
+	return RespErrorStruct{
 		Message: message,
 		Status: status,
 		Err: err,
@@ -44,7 +44,7 @@ func NewRespError(message string, status int, err string) RespError{
 }
 
 func NewBadRequestError(message string) RespError {
-	return respError{
+	return RespErrorStruct{
 		Message: message,
 		Status:  http.StatusBadRequest,
 		Err: "bad_request",

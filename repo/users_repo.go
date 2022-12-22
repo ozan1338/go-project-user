@@ -13,16 +13,34 @@ import (
 type UserRepo interface {
 	GetAllUser() ([]user.Users,resError.RespError)
 	GetUserByID(string) (*user.Users,resError.RespError)
+	CreateUser(user.Users) (int,resError.RespError)
 }
 
 const (
 	queryGetAllUser = `select id,name,email,password from public.User`
 	queryGetUserById = `select id, name, email from public.User where id=$1`
+	queryCreateUser = `insert into public.User(name,email,password) values($1,$2,$3) returning id;`
 	errNoRows = "no rows in result set"
 )
 
 func RepoUser(db *sql.DB) UserRepo {
 	return &repo{db: db}
+}
+
+func (r *repo) CreateUser(u user.Users) (int, resError.RespError) {
+	stmt, err := r.db.Prepare(queryCreateUser)
+	if err != nil {
+		log.Error("error when trying to prepare create user statement", err)
+		return 0, resError.NewBadRequestError("database error")
+	}
+	defer stmt.Close()
+
+	if err := stmt.QueryRow(u.Name,u.Email,u.Password).Scan(&u.ID); err != nil {
+		log.Error("error when trying to scan create user", err)
+		return 0, resError.NewBadRequestError("database error")
+	}
+	
+	return u.ID, nil
 }
 
 func (r *repo) GetAllUser() ([]user.Users,resError.RespError) {

@@ -142,3 +142,46 @@ func TestUserServiceGetById(t *testing.T) {
 		}
 	}
 }
+
+func TestUserServiceCreateUser(t *testing.T) {
+	//arrange
+	teardown := setup(t)
+	defer teardown()
+
+	var defaultUser = user.UsersRequest{
+		Email: "test@mail.com",
+		Name: "ozan",
+		Password: "123",
+	}
+
+	test := []struct{
+		name string
+		stub func() *gomock.Call
+		expectedErr bool
+	} {
+		{"no error", func() *gomock.Call {return r.EXPECT().CreateUser(gomock.Any()).Return(1,nil)}, false},
+		{"error", func() *gomock.Call {return r.EXPECT().CreateUser(gomock.Any()).Return(0,resError.NewBadRequestError("database error"))}, true},
+	}
+
+	for _, item := range test {
+		//act
+		item.stub()
+
+		user,err := service.CreateUser(defaultUser)
+
+		//act
+		if err != nil && !item.expectedErr {
+			t.Errorf("%s: not expected error but got one: %s",item.name,err.GetMessage())
+		}
+
+		if err == nil && item.expectedErr {
+			t.Errorf("%s: expected error but got nothing", item.name)
+		}
+
+		if user != nil {
+			if user.JWT != "" {
+				t.Errorf("jwt field initially doesnt have value but got %s", user.JWT)
+			}
+		}
+	}
+}
