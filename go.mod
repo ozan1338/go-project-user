@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.13.0 // indirect
@@ -21,6 +22,6 @@ require (
 	github.com/pkg/errors v0.8.1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/crypto v0.4.0 // indirect
+	golang.org/x/text v0.5.0 // indirect
 )

@@ -35,6 +35,21 @@ func (m *MockUserRepo) EXPECT() *MockUserRepoMockRecorder {
 	return m.recorder
 }
 
+// CreateUser mocks base method.
+func (m *MockUserRepo) CreateUser(arg0 user.Users) (int, errors_response.RespError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUser", arg0)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(errors_response.RespError)
+	return ret0, ret1
+}
+
+// CreateUser indicates an expected call of CreateUser.
+func (mr *MockUserRepoMockRecorder) CreateUser(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserRepo)(nil).CreateUser), arg0)
+}
+
 // GetAllUser mocks base method.
 func (m *MockUserRepo) GetAllUser() ([]user.Users, errors_response.RespError) {
 	m.ctrl.T.Helper()

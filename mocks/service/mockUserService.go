@@ -35,6 +35,21 @@ func (m *MockUserServiceInterface) EXPECT() *MockUserServiceInterfaceMockRecorde
 	return m.recorder
 }
 
+// CreateUser mocks base method.
+func (m *MockUserServiceInterface) CreateUser(arg0 user.UsersRequest) (*user.UsersResponse, errors_response.RespError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUser", arg0)
+	ret0, _ := ret[0].(*user.UsersResponse)
+	ret1, _ := ret[1].(errors_response.RespError)
+	return ret0, ret1
+}
+
+// CreateUser indicates an expected call of CreateUser.
+func (mr *MockUserServiceInterfaceMockRecorder) CreateUser(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserServiceInterface)(nil).CreateUser), arg0)
+}
+
 // GetAllUser mocks base method.
 func (m *MockUserServiceInterface) GetAllUser() ([]user.UsersResponse, errors_response.RespError) {
 	m.ctrl.T.Helper()

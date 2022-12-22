@@ -10,6 +10,7 @@ import (
 type UserServiceInterface interface {
 	GetAllUser() ([]user.UsersResponse, resError.RespError)
 	GetByID(string) (*user.UsersResponse, resError.RespError)
+	CreateUser(user.UsersRequest) (*user.UsersResponse, resError.RespError)
 }
 
 type UserService struct {
@@ -18,6 +19,32 @@ type UserService struct {
 
 func NewUserService(userRepo repo.UserRepo) UserServiceInterface {
 	return &UserService{repo: userRepo}
+}
+
+func (s UserService) CreateUser(u user.UsersRequest) (*user.UsersResponse, resError.RespError) {
+
+	if err := u.Validate(true); err != nil {
+		return nil, err
+	}
+
+	var user user.Users
+	user.Email = u.Email
+	user.Name = u.Name
+	user.Password = u.Password
+	if err := user.HashPassword(); err != nil {
+		return nil, err
+	}
+
+	id, err := s.repo.CreateUser(user);
+	if err != nil {
+		return nil, err
+	}
+	
+	user.ID = id
+
+	result := user.ToDto()
+
+	return &result, nil
 }
 
 func (s UserService) GetAllUser() ([]user.UsersResponse, resError.RespError) {

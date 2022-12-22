@@ -5,10 +5,13 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"project/domain/user"
 	"project/helpers"
+	mockJwt "project/mocks/pkg/jwt"
 	mockService "project/mocks/service"
+	_ "project/pkg/jwt"
 	resError "project/util/errors_response"
 
 	"github.com/golang/mock/gomock"
@@ -18,6 +21,7 @@ import (
 var (
 	s *mockService.MockUserServiceInterface
 	h *userHandler
+	jwtMaker *mockJwt.MockMaker
 	// router *mux.Router
 )
 
@@ -25,11 +29,100 @@ func setup(t *testing.T) func() {
 	ctrl := gomock.NewController(t)
 	s = mockService.NewMockUserServiceInterface(ctrl)
 	helper := helpers.NewHelper()
-	h = NewUserHandler(s,helper)
+	// jwtMaker := jwt.NewJWTMaker("secret")
+	jwtMaker  = mockJwt.NewMockMaker(ctrl)
+	h = NewUserHandler(s,helper,jwtMaker)
 	// router = mux.NewRouter()
 	return func ()  {
 		// router = nil
 		defer ctrl.Finish()
+	}
+}
+
+var users = []user.UsersResponse{
+	{ID: 1,Email: "test@mail.com",Name: "ozan", JWT: ""},
+}
+
+var usersRequest = user.UsersRequest{
+	Name: "ozan",
+	Email: "test@mail.com",
+	Password: "123",
+}
+
+func TestUserHandlerCreateUser(t *testing.T) {
+	//arrange 
+	var teardown = setup(t)
+	defer teardown()
+
+	test := []struct{
+		name string
+		json string
+		expectedStatus int
+		stubService func() *gomock.Call
+		stubJwt func() *gomock.Call
+	} {
+		{"create user ok",
+		`{
+			"name":"ozan",
+			"email":"test@mail.com",
+			"password":"123"
+		}`, http.StatusOK, 
+		func() *gomock.Call { 
+			return s.EXPECT().CreateUser(usersRequest).Return(&users[0],nil) 
+		},
+		func() *gomock.Call {
+			return jwtMaker.EXPECT().CreateToken(users[0].ID,15 * time.Minute)
+		}},
+		{"create user bad json",
+		`{
+			"name":"ozan",
+			"email":"test@mail.com",
+			"password":123
+		}`, http.StatusBadRequest, 
+		func() *gomock.Call { 
+			return nil
+		},func() *gomock.Call {
+			return nil
+		}},
+		{"create user error",
+		`{
+			"name":"ozan",
+			"email":"test@mail.com",
+			"password":"123"
+		}`, http.StatusBadRequest, 
+		func() *gomock.Call { 
+			return s.EXPECT().CreateUser(usersRequest).Return(nil,resError.NewBadRequestError("some error"))
+		},func() *gomock.Call {
+			return nil
+		}},
+		{"create user jwt error",
+		`{
+			"name":"ozan",
+			"email":"test@mail.com",
+			"password":"123"
+		}`, http.StatusUnauthorized, 
+		func() *gomock.Call { 
+			return s.EXPECT().CreateUser(usersRequest).Return(&users[0],nil)
+		},func() *gomock.Call {
+			return jwtMaker.EXPECT().CreateToken(users[0].ID,15 * time.Minute).Return("",nil,resError.NewRespError("some error", http.StatusUnauthorized, "jwt error"))
+		}},
+	}
+
+	//act
+	for _, item := range test{
+		item.stubService()
+		item.stubJwt()
+
+		var req *http.Request
+		req, _ = http.NewRequest(http.MethodPost,"/", strings.NewReader(item.json))
+
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(h.CreateUser)
+		handler.ServeHTTP(rr,req)
+
+		if rr.Code != item.expectedStatus {
+			t.Errorf("%s: wrong status return; expected %d but got %d", item.name, item.expectedStatus, rr.Code)
+		}
 	}
 }
 
@@ -40,9 +133,7 @@ func TestUserHandler(t *testing.T) {
 
 	defer teardown()
 
-	var users = []user.UsersResponse{
-		{ID: 1,Email: "test@mail.com",Name: "ozan"},
-	}
+
 
 	test := []struct{
 		name string
@@ -80,7 +171,6 @@ func TestUserHandler(t *testing.T) {
 		}
 
 		if item.paramID != "" {
-			t.Log(item.paramID)
 			var val = map[string]string{
 				"user_id":item.paramID,
 			}
@@ -96,7 +186,6 @@ func TestUserHandler(t *testing.T) {
 		if rr.Code  != item.expectedStatus {
 			t.Errorf("%s: wrong status return; expected %d but got %d", item.name, item.expectedStatus, rr.Code)
 		}
-		
 	}
 }
 
