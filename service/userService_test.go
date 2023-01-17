@@ -25,6 +25,94 @@ func setup(t *testing.T) func() {
 	}
 }
 
+func TestUserServiceLoginUser(t *testing.T) {
+	//Arrange
+	teardown := setup(t)
+	defer teardown()
+
+	loginRequest := user.UsersRequest{
+		Name: "",
+		Email: "test@mail.com",
+		Password: "123",
+	}
+
+	defaultUsers := user.Users{
+		ID: 0,
+		Name: loginRequest.Name,
+		Email: loginRequest.Email,
+		Password: "",
+	}
+
+	user := user.Users{
+		ID: 0,
+		Name: loginRequest.Email,
+		Email: loginRequest.Email,
+		Password: "$2a$10$s6a55hgBPxiCVBkHZgvG1eZfGszAheLBPQfR9f6VRRv8slBGI5J9K",
+	}
+
+
+	test := []struct{
+		name string
+		stub func() *gomock.Call
+		expectedErr bool
+	} {
+		{
+			name: "no error",
+			stub: func() *gomock.Call {
+				return r.EXPECT().GetUserByEmail(&defaultUsers).Return(&user,nil)
+			},
+			expectedErr: false,
+		},
+		{
+			name: "error",
+			stub: func() *gomock.Call {
+				return r.EXPECT().GetUserByEmail(&defaultUsers).Return(nil,resError.NewBadRequestError("some database error"))
+			},
+			expectedErr: true,
+		},
+		{
+			name: "error validate user",
+			stub: func() *gomock.Call {
+				return nil
+			},
+			expectedErr: true,
+		},
+		{
+			name: "error password not match",
+			stub: func() *gomock.Call {
+				return r.EXPECT().GetUserByEmail(&defaultUsers).Return(&user,nil)
+			},
+			expectedErr: true,
+		},
+	}
+
+	for _,item := range test {
+		//Act
+		item.stub()
+		if item.name == "error password not match" {
+			loginRequest.Password = "0"
+		} 
+
+		if item.name == "error validate user" {
+			loginRequest.Email = ""
+			loginRequest.Password = ""
+		}
+
+		_,err := service.LoginUser(loginRequest)
+
+		if item.expectedErr && err == nil {
+			t.Errorf("%s:expected error but got nothing", item.name)
+		}
+		
+		if !item.expectedErr && err != nil {
+			t.Errorf("%s:expected no error but got %s", item.name,err.GetMessage())
+		}
+
+		loginRequest.Password = "123"
+		loginRequest.Email = "test@mail.com"
+	}
+}
+
 func TestUserServiceGetAll(t *testing.T) {
 	//Arrange
 	teardown := setup(t)

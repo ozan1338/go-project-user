@@ -38,4 +38,5 @@ func userRouter(r *mux.Router) {
 	r.HandleFunc("/get-all", u.GetAllUser).Methods(http.MethodGet)
 	r.HandleFunc("/get-user/{user_id:[0-9]+}",u.GetUserByID).Methods(http.MethodGet)
 	r.HandleFunc("/create-user", u.CreateUser).Methods(http.MethodPost)
+	r.HandleFunc("/login", u.LoginUser).Methods(http.MethodPost)
 }

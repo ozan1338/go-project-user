@@ -49,6 +49,100 @@ var usersRequest = user.UsersRequest{
 	Password: "123",
 }
 
+func TestUserHandlerLoginUser(t *testing.T) {
+	//arrange 
+	var teardown = setup(t)
+	defer teardown()
+
+	test := []struct{
+		name string
+		json string
+		expectedStatus int
+		stubService func() *gomock.Call
+		stubJwt func() *gomock.Call
+	} {
+		{
+			name:"login user ok",
+			json: `{
+				"email":"test@mail.com",
+				"password":"123"
+			}`,
+			expectedStatus: http.StatusOK,
+			stubService: func() *gomock.Call {
+				var testUser = usersRequest
+				testUser.Name = ""
+				return s.EXPECT().LoginUser(testUser).Return(&users[0],nil)
+			},
+			stubJwt: func() *gomock.Call {
+				return jwtMaker.EXPECT().CreateToken(users[0].ID, 15 * time.Minute)
+			},
+		},
+		{
+			name:"login user bad json",
+			json: `{
+				"email":"test@mail.com",
+				"password":123
+			}`,
+			expectedStatus: http.StatusBadRequest,
+			stubService: func() *gomock.Call {
+				return nil
+			},
+			stubJwt: func() *gomock.Call {
+				return nil
+			},
+		},
+		{
+			name:"login user error",
+			json: `{
+				"email":"test@mail.com",
+				"password":"123"
+			}`,
+			expectedStatus: http.StatusBadRequest,
+			stubService: func() *gomock.Call {
+				var testUser = usersRequest
+				testUser.Name = ""
+				return s.EXPECT().LoginUser(testUser).Return(nil,resError.NewBadRequestError("some error"))
+			},
+			stubJwt: func() *gomock.Call {
+				return nil
+			},
+		},
+		{
+			name:"login user jwt error",
+			json: `{
+				"email":"test@mail.com",
+				"password":"123"
+			}`,
+			expectedStatus: http.StatusUnauthorized,
+			stubService: func() *gomock.Call {
+				var testUser = usersRequest
+				testUser.Name = ""
+				return s.EXPECT().LoginUser(testUser).Return(&users[0],nil)
+			},
+			stubJwt: func() *gomock.Call {
+				return jwtMaker.EXPECT().CreateToken(users[0].ID, 15 * time.Minute).Return("",nil,resError.NewRespError("some error", http.StatusUnauthorized,"unauthorized"))
+			},
+		},
+	}
+
+	for _, item := range test {
+		item.stubJwt()
+		item.stubService()
+
+		var req *http.Request
+		req, _ = http.NewRequest(http.MethodPost,"/", strings.NewReader(item.json))
+
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(h.LoginUser)
+		handler.ServeHTTP(rr,req)
+
+		if rr.Code != item.expectedStatus {
+			t.Errorf("%s : expected %d but got %d",item.name,item.expectedStatus,rr.Code)
+		}
+	}
+
+}
+
 func TestUserHandlerCreateUser(t *testing.T) {
 	//arrange 
 	var teardown = setup(t)

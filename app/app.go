@@ -8,6 +8,7 @@ import (
 	"project/pkg/postgresql"
 	"project/router"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -19,5 +20,10 @@ func StartApp() {
 
 	logger.Info("Start App")
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	// Setup allowed Header, Method, and Origin for CORS on this below code ...
+	var AllowedHeaders = handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	var AllowedMethods = handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE"})
+	var AllowedOrigins = handlers.AllowedOrigins([]string{"*"})
+
+	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(AllowedHeaders,AllowedMethods,AllowedOrigins)(r)))
 }

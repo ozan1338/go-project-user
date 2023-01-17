@@ -79,3 +79,18 @@ func (mr *MockUserServiceInterfaceMockRecorder) GetByID(arg0 interface{}) *gomoc
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockUserServiceInterface)(nil).GetByID), arg0)
 }
+
+// LoginUser mocks base method.
+func (m *MockUserServiceInterface) LoginUser(arg0 user.UsersRequest) (*user.UsersResponse, errors_response.RespError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LoginUser", arg0)
+	ret0, _ := ret[0].(*user.UsersResponse)
+	ret1, _ := ret[1].(errors_response.RespError)
+	return ret0, ret1
+}
+
+// LoginUser indicates an expected call of LoginUser.
+func (mr *MockUserServiceInterfaceMockRecorder) LoginUser(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoginUser", reflect.TypeOf((*MockUserServiceInterface)(nil).LoginUser), arg0)
+}

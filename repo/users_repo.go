@@ -14,17 +14,38 @@ type UserRepo interface {
 	GetAllUser() ([]user.Users,resError.RespError)
 	GetUserByID(string) (*user.Users,resError.RespError)
 	CreateUser(user.Users) (int,resError.RespError)
+	GetUserByEmail(*user.Users) (*user.Users,resError.RespError)
 }
 
 const (
 	queryGetAllUser = `select id,name,email,password from public.User`
 	queryGetUserById = `select id, name, email from public.User where id=$1`
 	queryCreateUser = `insert into public.User(name,email,password) values($1,$2,$3) returning id;`
+	queryGetUserByEmail = `select id, password, name from public.User where email = $1;`
 	errNoRows = "no rows in result set"
 )
 
 func RepoUser(db *sql.DB) UserRepo {
 	return &repo{db: db}
+}
+
+func (r *repo) GetUserByEmail(u *user.Users) (*user.Users,resError.RespError) {
+	stmt, err := r.db.Prepare(queryGetUserByEmail)
+	if err != nil {
+		log.Error("error when trying to prepare get user by email", err)
+		return nil,resError.NewBadRequestError("database error")
+	}
+	defer stmt.Close()
+
+	if err := stmt.QueryRow(u.Email).Scan(&u.ID,&u.Password,&u.Name); err != nil {
+		if strings.Contains(err.Error(),errNoRows) {
+			return nil,resError.NewBadRequestError("user not found")
+		}
+		log.Error("error when trying scan get user by email", err)
+		return nil,resError.NewBadRequestError("database error")
+	}
+
+	return u,nil
 }
 
 func (r *repo) CreateUser(u user.Users) (int, resError.RespError) {

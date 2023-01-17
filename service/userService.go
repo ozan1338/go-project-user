@@ -1,6 +1,7 @@
 package service
 
 import (
+	"net/http"
 	"project/domain/user"
 	"project/repo"
 	resError "project/util/errors_response"
@@ -11,6 +12,7 @@ type UserServiceInterface interface {
 	GetAllUser() ([]user.UsersResponse, resError.RespError)
 	GetByID(string) (*user.UsersResponse, resError.RespError)
 	CreateUser(user.UsersRequest) (*user.UsersResponse, resError.RespError)
+	LoginUser(user.UsersRequest) (*user.UsersResponse, resError.RespError)
 }
 
 type UserService struct {
@@ -19,6 +21,29 @@ type UserService struct {
 
 func NewUserService(userRepo repo.UserRepo) UserServiceInterface {
 	return &UserService{repo: userRepo}
+}
+
+func (s UserService) LoginUser(ur user.UsersRequest) (*user.UsersResponse, resError.RespError) {
+	if err := ur.Validate(false); err != nil {
+		return nil, err
+	}
+
+	var u user.Users
+	u.Email = ur.Email
+	// user.Password = u.Password
+
+	user,getErr := s.repo.GetUserByEmail(&u);
+	if getErr != nil {
+		return nil, getErr
+	}
+
+	if match := user.CheckPassword(ur.Password); !match {
+		return nil, resError.NewRespError("password not match", http.StatusUnauthorized, "unauthorized")
+	}
+
+	result := user.ToDto()
+
+	return &result,nil
 }
 
 func (s UserService) CreateUser(u user.UsersRequest) (*user.UsersResponse, resError.RespError) {

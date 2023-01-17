@@ -65,6 +65,21 @@ func (mr *MockUserRepoMockRecorder) GetAllUser() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllUser", reflect.TypeOf((*MockUserRepo)(nil).GetAllUser))
 }
 
+// GetUserByEmail mocks base method.
+func (m *MockUserRepo) GetUserByEmail(arg0 *user.Users) (*user.Users, errors_response.RespError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserByEmail", arg0)
+	ret0, _ := ret[0].(*user.Users)
+	ret1, _ := ret[1].(errors_response.RespError)
+	return ret0, ret1
+}
+
+// GetUserByEmail indicates an expected call of GetUserByEmail.
+func (mr *MockUserRepoMockRecorder) GetUserByEmail(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockUserRepo)(nil).GetUserByEmail), arg0)
+}
+
 // GetUserByID mocks base method.
 func (m *MockUserRepo) GetUserByID(arg0 string) (*user.Users, errors_response.RespError) {
 	m.ctrl.T.Helper()
